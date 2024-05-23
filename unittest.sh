@@ -7,7 +7,10 @@ set -euo pipefail
 # 3. Executing the resulting binary
 # 4. Verify that the stdout output is identical to the transformed source.
 
+COMPILER="gcc"
+
 source="$1"
+shift
 
 sans_extension="${source%.*}"
 
@@ -16,9 +19,9 @@ quined_bin="${sans_extension}_quined"
 
 quine_output=$(mktemp)
 
-./qcc "$source" > "$quined_src"
-gcc -o "$quined_bin" "$quined_src"
-./"$quined_bin" > "$quine_output"
+./qcc -d "$source" > "$quined_src"
+"$COMPILER" -o "$quined_bin" "$quined_src"
+./"$quined_bin" "$@" > "$quine_output"
 
 if diff -q "$quined_src" "$quine_output" > /dev/null
 then
