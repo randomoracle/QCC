@@ -15,10 +15,11 @@
  * along with QCC. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <errno.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
 
 static const char *kUsage =
 "Usage: qcc [options] <source file>\n"
