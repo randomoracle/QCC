@@ -1,3 +1,20 @@
+/*
+ * This file is part of the QCC project.
+ *
+ * QCC is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * QCC is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with QCC. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -30,31 +47,21 @@ static const char kProloguePrototype[] =
 "const char *get_self();\n"
 "\n";
 
-static const char kHexDecodeHelper[] =
-"size_t hex_decode(const char *input, char **output) {\n"
-"  size_t l = strlen(input);\n"
-"  char *decoded = *output = malloc(l / 2 + 1);\n"
-"  while (*input) {\n"
-"    unsigned char byte;\n"
-"    sscanf(input, \"%2hhx\", &byte);\n"
-"    *decoded++ = byte;\n"
-"    input += 2;\n"
-"  }\n"
-"  *decoded = 0;\n"
-"  return decoded - *output;\n"
-"}\n";
-
 static const char kSelfRef[] =
-"const char *get_self() {\n"
-"  static char *self;\n"
-"  if (self == NULL) {\n"
-"    char *decoded_prologue, *decoded_selfref;\n"
-"    size_t c_prologue = hex_decode(prologue, &decoded_prologue);\n"
-"    size_t c_selfref = hex_decode(selfref, &decoded_selfref);\n"
-"    self = malloc(c_prologue + c_selfref + strlen(prologue) + strlen(selfref) + 0x1000);\n"
-"    sprintf(self, \"%sconst char prologue[] = %c%s%c;\\nconst char selfref[] = %c%s%c;\\n\\n%s\",\n"
-"            decoded_prologue, 34, prologue, 34, 34, selfref, 34, decoded_selfref);\n"
-"    free(decoded_prologue), free(decoded_selfref);\n"
+"size_t hex2bin(const char*hex,char**bin) {\n"
+"  char*dst=*bin=malloc(strlen(hex)/2+1);\n"
+"  while(*hex){sscanf(hex,\"%2hhx\",dst++),hex+=2;}\n"
+"  return *dst=0,(dst-*bin);\n"
+"}\n"
+"\n"
+"const char*get_self() {\n"
+"  static char*self;\n"
+"  if (!self) {\n"
+"    char*decP,*decSR;\n"
+"    size_t cP=hex2bin(prologue,&decP),cSR=hex2bin(selfref,&decSR);\n"
+"    self=malloc(cP+cSR+strlen(prologue)+strlen(selfref)+1000);\n"
+"    sprintf(self,\"%sconst char*prologue=%c%s%c;\\nconst char*selfref=%c%s%c;\\n\\n%s\",decP,34,prologue,34,34,selfref,34,decSR);\n"
+"    free(decP),free(decSR);\n"
 "  }\n"
 "  return self;\n"
 "}\n";
@@ -147,17 +154,15 @@ int quine_source(FILE *fp) {
     synchronized_write(prologue, segment);
 
   synchronized_write(prologue, "\n");
-  synchronized_write(prologue, kHexDecodeHelper);
-  synchronized_write(prologue, "\n");
 
   rewind(prologue);
 
-  printf("const char prologue[] = \"");
+  printf("const char*prologue=\"");
   while (fgets(segment, kSpace, prologue))
     printf("%s", segment);
   printf("\";\n");
 
-  printf("const char selfref[] = \"");
+  printf("const char*selfref=\"");
   output_hex(stdout, kSelfRef);
   printf("\";\n\n");
 
