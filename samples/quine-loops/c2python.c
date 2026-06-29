@@ -19,14 +19,11 @@ char *python_printer(const char *s) {
 
   for (const unsigned char *c = (const unsigned char *)s; *c; c++) {
     switch (*c) {
-    case '\\':
-    case '"':
-    case '\n':
-    case '\r': 
-    case '\t':
-      *p++ = '\\';
-      *p++ = *c;
-      break;
+    case '\\': *p++ = '\\'; *p++ = '\\'; break;
+    case '"':  *p++ = '\\'; *p++ = '"';  break;
+    case '\n': *p++ = '\\'; *p++ = 'n';  break;
+    case '\r': *p++ = '\\'; *p++ = 'r';  break;
+    case '\t': *p++ = '\\'; *p++ = 't';  break;
     default:
       if (*c >= 0x20 && *c < 0x7f)
         *p++ = (char)*c;
